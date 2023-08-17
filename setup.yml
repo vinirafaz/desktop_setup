@@ -1,0 +1,110 @@
+- name: "Setup to linux desktop (Ubuntu 22.04LTS)"
+  hosts: localhost
+  connection: local
+  become: yes
+
+  tasks:
+  - name: "Download deb packages"
+    get_url: 
+      url: "{{ item }}"
+      dest: ~/
+    loop:
+      - "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
+      - "https://github.com/upscayl/upscayl/releases/download/v2.0.1/upscayl-2.0.1-linux.deb"
+      - "https://download.virtualbox.org/virtualbox/7.0.8/virtualbox-7.0_7.0.8-156879~Ubuntu~jammy_amd64.deb"
+
+ 
+  - name: "Add apt repositories"
+    apt_repository:
+      repo: "{{ item }}"
+      state: present
+      validate_certs: no
+    loop:
+      - "ppa:deadsnakes/ppa"
+      - "deb [trusted=yes] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"    
+
+  - name: "Update apt cache"
+    apt:
+      update_cache: yes
+      cache_valid_time: 3600
+
+  - name: "Install deb packages"
+    apt:
+      deb: "~/{{ item }}"
+      state: present
+    loop:
+      - "google-chrome-stable_current_amd64.deb"
+      - "upscayl-2.0.1-linux.deb"
+      - "virtualbox-7.0_7.0.8-156879~Ubuntu~jammy_amd64.deb"
+
+  - name: "Removing apt locks if any"
+    file:
+      path: "{{ item }}"
+      state: absent
+    loop:
+      - "/var/lib/dpkg/lock-frontend" 
+      - "/var/cache/apt/archives/lock"
+      - "/var/lib/apt/lists/lock"
+    ignore_errors: yes
+
+  #TODO: Review this task
+  - name: "Install apt packages"
+    apt:
+      name: "{{ item }}"
+      state: present
+    loop:
+      - "vim"
+      - "flatpak"
+      - "code"
+      - "tcpdump"
+      - "git"
+      - "docker.io"
+      - "docker-compose"
+      - "tldr"
+      - "locate"
+      - "discord"
+      - "gnome-tweaks"
+      - "vim"
+      - "flameshot"
+      - "wireshark"
+      - "wine"
+      - "terraform"
+      - "openvpn"
+      - "imagemagick"
+      - "snapd"
+      - "discord"
+      - "mtp-tools"
+    ignore_errors: yes
+
+  - name: "Apt cleanup"
+    apt:
+      autoremove: yes
+      autoclean: yes
+      update_cache: yes
+
+  - name: "Create Docker group"
+    group:
+      name: docker
+      state: present
+
+  - name: "Get user name"
+    become: no
+    local_action: command whoami
+    register: user_name
+
+  - name: "Add user to docker group"
+    become: yes
+    user:
+      name: "{{ user_name.stdout }}"
+      groups: docker
+      append: yes
+
+  - name: "Install snap"
+    become: yes
+    snap:
+      name:
+        - postman
+        - chromium
+        - onlyoffice-desktopeditors
+        - vlc
+      classic: yes
