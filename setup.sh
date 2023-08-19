@@ -17,7 +17,6 @@ travas_apt(){
 
 
 apt_update
-testes_internet
 travas_apt
 wget https://raw.githubusercontent.com/vinirafaz/desktop_setup/main/setup.yml
 sudo apt install -y ansible
